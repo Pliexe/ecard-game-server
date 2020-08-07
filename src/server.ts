@@ -97,7 +97,7 @@ io.on('connect', (socket) => {
                     if (game.player1Socket.connected && game.player2Socket.connected) {
                         console.log("p1 id: "+game.playerid1 +", Pushing back dev testing stuff: "+(game.playerid1 == "1" && game.playerid2 == "2"));
 
-                        new Game({ socket: game.player1Socket, id: game.playerid1 }, { socket: game.player2Socket, id: game.playerid2 });
+                        new Game({ socket: game.player1Socket, id: game.playerid1 }, { socket: game.player2Socket, id: game.playerid2 }, gameEnd);
                         gameQueue.splice(gameIndex, 1);
                     }
 
@@ -137,4 +137,9 @@ io.on('connect', (socket) => {
 
 function gameEnd(p1id, p2id, info: { time: number, p1s: number, p2s: number, winer: string }) {
     main_server.emit('gameResult', p1id, p2id, { time: info.time, p1s: info.p1s, p2s: info.p2s, winer: info.winer });
+}
+
+function ingameConnectionHandler()
+{
+    
 }

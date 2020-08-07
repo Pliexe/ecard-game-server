@@ -7,10 +7,18 @@ const cards = [
 ];
 
 export class Game {
+    private startTime: number = Date.now();
+
     private p1Socket: SocketIO.Socket;
     private p2Socket: SocketIO.Socket;
+
+    private p1ID: string;
+    private p2ID: string;
+
     private oneDone: boolean = false;
     private playingThisRound: number;
+
+    private gameEndCallback: (p1id, p2id, info: { time: number, p1s: number, p2s: number, winer: string }) => void;
 
     // Scores
 
@@ -23,9 +31,12 @@ export class Game {
     private maxRounds: number = 12;
     private switchSideBetween: number = 3;
 
-    constructor(p1: { socket: SocketIO.Socket, id: string }, p2: { socket: SocketIO.Socket, id: string }) {
+    constructor(p1: { socket: SocketIO.Socket, id: string }, p2: { socket: SocketIO.Socket, id: string }, gameEndFunc: (p1id, p2id, info: { time: number, p1s: number, p2s: number, winer: string }) => void) {
         this.p1Socket = p1.socket;
         this.p2Socket = p2.socket;
+
+        this.p1ID = p1.id;
+        this.p2ID = p2.id;
 
         p1.socket.emit('oppomentConnected');
         p2.socket.emit('oppomentConnected');
@@ -82,13 +93,16 @@ export class Game {
             {
                 this.p1Socket.emit("draw");
                 this.p2Socket.emit("draw");
+                this.gameEndCallback(this.p1ID, this.p2ID, { time: Date.now() - this.startTime, p1s: this.p1Score, p2s: this.p2Score, winer: "draw" })
             } else if(this.p1Score > this.p2Score)
             {
                 this.p1Socket.emit("win");
                 this.p2Socket.emit("lose");
+                this.gameEndCallback(this.p1ID, this.p2ID, { time: Date.now() - this.startTime, p1s: this.p1Score, p2s: this.p2Score, winer: "p1" });
             } else {
                 this.p1Socket.emit("lose");
                 this.p2Socket.emit("win");
+                this.gameEndCallback(this.p1ID, this.p2ID, { time: Date.now() - this.startTime, p1s: this.p1Score, p2s: this.p2Score, winer: "p2" });
             }
         }
     }
