@@ -70,7 +70,8 @@ io.on('connect', (socket) => {
                     return;
                 }
 
-                let game = gameQueue.find(x => x.playerid1 == auth || x.playerid2 == auth);
+                let gameIndex = gameQueue.findIndex(x => x.playerid1 == auth || x.playerid2 == auth);
+                let game = gameQueue[gameIndex];
 
                 if (game.playerid1 == auth) {
                     console.log("asigning soc1");
@@ -95,11 +96,9 @@ io.on('connect', (socket) => {
                 if (game.player1Socket != undefined && game.player2Socket != undefined)
                     if (game.player1Socket.connected && game.player2Socket.connected) {
                         console.log("p1 id: "+game.playerid1 +", Pushing back dev testing stuff: "+(game.playerid1 == "1" && game.playerid2 == "2"));
-                        if(game.playerid1 == "1") gameQueue.push({
-                            playerid1: "1", player1Socket: undefined,
-                            playerid2: "2", player2Socket: undefined
-                        });
+
                         new Game({ socket: game.player1Socket, id: game.playerid1 }, { socket: game.player2Socket, id: game.playerid2 });
+                        gameQueue.splice(gameIndex, 1);
                     }
 
                 usrType = "game";
