@@ -2,12 +2,23 @@ import { SocketServer } from "./SocketIO";
 import { Game } from "./game";
 import { type } from "os";
 
-const io: SocketIO.Server = new SocketServer().socketHandler;
+const socketServer = new SocketServer();
+const app = socketServer.app;
+const io: SocketIO.Server = socketServer.socketHandler;
+
+// app.use(express.static('public'));
+
+app.get('/', function(request, response) {
+  response.send(`Game server uptime of: ${process.uptime} and total of ${0} games played science uptime`);
+});
+
+
 const version = "0.0.1";
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 let main_server: SocketIO.Socket;
+let gamesPlayed: number = 0;
 let gameQueue: { playerid1: string, player1Socket: SocketIO.Socket, playerid2: string, player2Socket: SocketIO.Socket, gameType: "normal" | "ranked" | "custom" }[] = [
     // {
     //     playerid1: "1", player1Socket: undefined,
@@ -137,6 +148,7 @@ io.on('connect', (socket) => {
 });
 
 function gameEnd(p1id, p2id, info: { time: number, p1s: number, p2s: number, winer: string, type: "ranked" | "normal" | "custom" }) {
+    gamesPlayed++;
     main_server.emit('gameResult', p1id, p2id, { type: type, time: info.time, p1s: info.p1s, p2s: info.p2s, winer: info.winer });
 }
 
