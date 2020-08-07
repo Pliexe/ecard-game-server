@@ -1,0 +1,17 @@
+{
+  "name": "ecard-game-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsc && node-env-run ."
+  },
+  "author": "pliexe",
+  "license": "MIT",
+  "dependencies": {
+    "socket.io": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/socket.io": "^2.1.10"
+  }
+}
