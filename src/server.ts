@@ -1,5 +1,6 @@
 import { SocketServer } from "./SocketIO";
 import { Game } from "./game";
+import { type } from "os";
 
 const io: SocketIO.Server = new SocketServer().socketHandler;
 const version = "0.0.1";
@@ -7,11 +8,11 @@ const version = "0.0.1";
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 let main_server: SocketIO.Socket;
-let gameQueue: { playerid1: string, player1Socket: SocketIO.Socket, playerid2: string, player2Socket: SocketIO.Socket }[] = [
-    {
-        playerid1: "1", player1Socket: undefined,
-        playerid2: "2", player2Socket: undefined
-    },
+let gameQueue: { playerid1: string, player1Socket: SocketIO.Socket, playerid2: string, player2Socket: SocketIO.Socket, gameType: "normal" | "ranked" | "custom" }[] = [
+    // {
+    //     playerid1: "1", player1Socket: undefined,
+    //     playerid2: "2", player2Socket: undefined,
+    // },
 ];
 
 io.on('connect', (socket) => {
@@ -97,7 +98,7 @@ io.on('connect', (socket) => {
                     if (game.player1Socket.connected && game.player2Socket.connected) {
                         console.log("p1 id: "+game.playerid1 +", Pushing back dev testing stuff: "+(game.playerid1 == "1" && game.playerid2 == "2"));
 
-                        new Game({ socket: game.player1Socket, id: game.playerid1 }, { socket: game.player2Socket, id: game.playerid2 }, gameEnd);
+                        new Game({ socket: game.player1Socket, id: game.playerid1 }, { socket: game.player2Socket, id: game.playerid2 }, game.gameType, gameEnd);
                         gameQueue.splice(gameIndex, 1);
                     }
 
@@ -112,12 +113,12 @@ io.on('connect', (socket) => {
         }
     });
 
-    socket.on("queueGame", (p1: string, p2: string, callback: (result: boolean) => void) => {
+    socket.on("queueGame", (p1: string, p2: string, gameType: "normal" | "ranked" | "custom", callback: (result: boolean) => void) => {
         console.log(usrType);
         console.log(usrType != "server");
         if (usrType != "server") return callback(false);
 
-        gameQueue.push({ playerid1: p1, player1Socket: undefined, playerid2: p2, player2Socket: undefined });
+        gameQueue.push({ playerid1: p1, player1Socket: undefined, playerid2: p2, player2Socket: undefined, gameType: gameType });
         callback(true);
         console.log(`${p1} ${p2}`);
     });
@@ -135,11 +136,11 @@ io.on('connect', (socket) => {
     });
 });
 
-function gameEnd(p1id, p2id, info: { time: number, p1s: number, p2s: number, winer: string }) {
-    main_server.emit('gameResult', p1id, p2id, { time: info.time, p1s: info.p1s, p2s: info.p2s, winer: info.winer });
+function gameEnd(p1id, p2id, info: { time: number, p1s: number, p2s: number, winer: string, type: "ranked" | "normal" | "custom" }) {
+    main_server.emit('gameResult', p1id, p2id, { type: type, time: info.time, p1s: info.p1s, p2s: info.p2s, winer: info.winer });
 }
 
 function ingameConnectionHandler()
 {
-    
+
 }
