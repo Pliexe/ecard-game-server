@@ -9,7 +9,7 @@ const io: SocketIO.Server = socketServer.socketHandler;
 // app.use(express.static('public'));
 
 app.get('/', function(request, response) {
-  response.send(`Game server uptime of: ${process.uptime} and total of ${0} games played science uptime`);
+  response.send(`Game server uptime of: ${process.uptime()} seconds and total of ${0} games played science uptime`);
 });
 
 
