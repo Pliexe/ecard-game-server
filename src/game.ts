@@ -20,7 +20,7 @@ export class Game {
     private oneDone: boolean = false;
     private playingThisRound: number;
 
-    private gameEndCallback: (p1id, p2id, info: { time: number, p1s: number, p2s: number, winer: string, type: "ranked" | "normal" | "custom" }) => void;
+    private gameEndCallback: (gameid: string, p1id, p2id, info: { time: number, p1s: number, p2s: number, winer: string, type: "ranked" | "normal" | "custom" }) => void;
 
     private gameType: gameTypes;
 
@@ -31,11 +31,13 @@ export class Game {
 
     // Rounds
 
-    private round: number = 2;
-    private maxRounds: number = 12;
+    private round: number = 1;
+    private maxRounds: number = 0;
     private switchSideBetween: number = 3;
 
-    constructor(p1: { socket: SocketIO.Socket, id: string }, p2: { socket: SocketIO.Socket, id: string }, type: gameTypes, gameEndFunc: (p1id, p2id, info: { time: number, p1s: number, p2s: number, winer: string, type: "ranked" | "normal" | "custom" }) => void) {
+    public gameID: string;
+
+    constructor(p1: { socket: SocketIO.Socket, id: string }, p2: { socket: SocketIO.Socket, id: string }, type: gameTypes, id: string, gameEndFunc: (gameid: string, p1id, p2id, info: { time: number, p1s: number, p2s: number, winer: string, type: "ranked" | "normal" | "custom" }) => void) {
         this.p1Socket = p1.socket;
         this.p2Socket = p2.socket;
 
@@ -44,6 +46,8 @@ export class Game {
 
         this.gameEndCallback = gameEndFunc;
         this.gameType = type;
+
+        this.gameID = id;
 
         p1.socket.emit('oppomentConnected');
         p2.socket.emit('oppomentConnected');
@@ -62,7 +66,6 @@ export class Game {
         this.p1Socket.emit("gameStart", { yourCards: p1Cards, enemyCards: p2Cards });
 
         this.p2Socket.emit("gameStart", { yourCards: p2Cards, enemyCards: p1Cards });
-
         console.log("ROUND >>> "+ this.round);
     }
 
@@ -76,8 +79,8 @@ export class Game {
         else
             this.p2Score++;
 
-        this.p1Socket.emit("updateScore", { yourScore: this.p1Score, enemyScore: this.p2Score, round: this.round });
-        this.p2Socket.emit("updateScore", { yourScore: this.p2Score, enemyScore: this.p1Score, round: this.round });
+        this.p1Socket.emit("updateScore", { yourScore: this.p1Score, enemyScore: this.p2Score, round: this.round <= this.maxRounds ? this.round : this.maxRounds });
+        this.p2Socket.emit("updateScore", { yourScore: this.p2Score, enemyScore: this.p1Score, round: this.round <= this.maxRounds ? this.round : this.maxRounds });
 
         console.log(`${this.round} > ${this.maxRounds}: ${this.round > this.maxRounds}`);
         if (this.round <= this.maxRounds) {
@@ -100,16 +103,16 @@ export class Game {
             {
                 this.p1Socket.emit("draw");
                 this.p2Socket.emit("draw");
-                this.gameEndCallback(this.p1ID, this.p2ID, { type: this.gameType, time: Date.now() - this.startTime, p1s: this.p1Score, p2s: this.p2Score, winer: "draw" })
+                this.gameEndCallback(this.gameID, this.p1ID, this.p2ID, { type: this.gameType, time: Date.now() - this.startTime, p1s: this.p1Score, p2s: this.p2Score, winer: "draw" })
             } else if(this.p1Score > this.p2Score)
             {
                 this.p1Socket.emit("win");
                 this.p2Socket.emit("lose");
-                this.gameEndCallback(this.p1ID, this.p2ID, { type: this.gameType, time: Date.now() - this.startTime, p1s: this.p1Score, p2s: this.p2Score, winer: "p1" });
+                this.gameEndCallback(this.gameID,this.p1ID, this.p2ID, { type: this.gameType, time: Date.now() - this.startTime, p1s: this.p1Score, p2s: this.p2Score, winer: "p1" });
             } else {
                 this.p1Socket.emit("lose");
                 this.p2Socket.emit("win");
-                this.gameEndCallback(this.p1ID, this.p2ID, { type: this.gameType, time: Date.now() - this.startTime, p1s: this.p1Score, p2s: this.p2Score, winer: "p2" });
+                this.gameEndCallback(this.gameID,this.p1ID, this.p2ID, { type: this.gameType, time: Date.now() - this.startTime, p1s: this.p1Score, p2s: this.p2Score, winer: "p2" });
             }
         }
     }

@@ -1,17 +1,30 @@
 import { SocketServer } from "./SocketIO";
 import { Game } from "./game";
 import { type } from "os";
+import path from 'path';
+import ms from "ms";
+import shortid from 'shortid';
 
 const socketServer = new SocketServer();
 const app = socketServer.app;
 const io: SocketIO.Server = socketServer.socketHandler;
 
+// Load view Engine
+
+app.set('views', path.join(__dirname, '../views'));
+app.set('view engine', 'pug');
+
 // app.use(express.static('public'));
 
 app.get('/', function(request, response) {
-  response.send(`Game server uptime of: ${process.uptime()} seconds and total of ${0} games played science uptime`);
+//   response.send(`Game server uptime of: ${process.uptime()} seconds and total of ${0} games played science uptime`);
+    response.render('index.pug', { 
+        uptime: ms(process.uptime() * 1000, { long: true }),
+        games: gamesPlayed,
+        currentGames: activeGames.size == 1 ? `${activeGames.size} game is` : `${activeGames.size} games are`,
+        ramUsage: process.memoryUsage().rss >= 1000000000 ? `${Math.round((process.memoryUsage().rss / 1000000000)).toFixed(2)}GB` : `${Math.round((process.memoryUsage().rss / 1000000)).toFixed(2)}MB` 
+    });
 });
-
 
 const version = "0.0.1";
 
@@ -25,6 +38,8 @@ let gameQueue: { playerid1: string, player1Socket: SocketIO.Socket, playerid2: s
     //     playerid2: "2", player2Socket: undefined,
     // },
 ];
+
+let activeGames: Map<string, Game> = new Map();
 
 io.on('connect', (socket) => {
     console.log("CONNECTED");
@@ -109,7 +124,10 @@ io.on('connect', (socket) => {
                     if (game.player1Socket.connected && game.player2Socket.connected) {
                         console.log("p1 id: "+game.playerid1 +", Pushing back dev testing stuff: "+(game.playerid1 == "1" && game.playerid2 == "2"));
 
-                        new Game({ socket: game.player1Socket, id: game.playerid1 }, { socket: game.player2Socket, id: game.playerid2 }, game.gameType, gameEnd);
+                        let gameid = shortid();
+
+                        activeGames.set(gameid, new Game({ socket: game.player1Socket, id: game.playerid1 }, { socket: game.player2Socket, id: game.playerid2 }, game.gameType, gameid, gameEnd));
+                        
                         gameQueue.splice(gameIndex, 1);
                     }
 
@@ -147,7 +165,8 @@ io.on('connect', (socket) => {
     });
 });
 
-function gameEnd(p1id, p2id, info: { time: number, p1s: number, p2s: number, winer: string, type: "ranked" | "normal" | "custom" }) {
+function gameEnd(gameid: string, p1id, p2id, info: { time: number, p1s: number, p2s: number, winer: string, type: "ranked" | "normal" | "custom" }) {
+    if(activeGames.has(gameid)) activeGames.delete(gameid);
     gamesPlayed++;
     main_server.emit('gameResult', p1id, p2id, { type: type, time: info.time, p1s: info.p1s, p2s: info.p2s, winer: info.winer });
 }
