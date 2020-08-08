@@ -42,6 +42,7 @@ export class Game {
         this.p1ID = p1.id;
         this.p2ID = p2.id;
 
+        this.gameEndCallback = gameEndFunc;
         this.gameType = type;
 
         p1.socket.emit('oppomentConnected');
